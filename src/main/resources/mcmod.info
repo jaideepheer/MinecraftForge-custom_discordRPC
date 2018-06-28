@@ -1,0 +1,20 @@
+[
+  {
+    "modid": "customdiscordrpc",
+    "name": "Custom Discord RPC",
+    "description": "This mod allows you to use custom Rich Presense Text for the Discord client.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "",
+    "updateUrl": "none",
+    "authorList": [
+      "Jaideep_Singh_Heer"
+    ],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": [
+      ""
+    ]
+  }
+]
