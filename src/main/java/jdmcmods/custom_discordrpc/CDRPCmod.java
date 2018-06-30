@@ -1,14 +1,13 @@
 package jdmcmods.custom_discordrpc;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
+import net.minecraft.client.gui.GuiMainMenu;
+import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.event.RegistryEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Mod(
         modid = CDRPCmod.MOD_ID,
@@ -20,7 +19,15 @@ public class CDRPCmod {
 
     public static final String MOD_ID = "customdiscordrpc";
     public static final String MOD_NAME = "Custom Discord RPC";
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "0.9";
+
+    public static Logger LOGGER = LogManager.getLogger();
+
+    private final ModConfigManager configManager = new ModConfigManager();
+
+    static {
+        discordRPCHandler.startRPC();
+    }
 
     /**
      * This is the instance of your mod as created by Forge. It will never be null.
@@ -34,7 +41,9 @@ public class CDRPCmod {
      */
     @Mod.EventHandler
     public void preinit(FMLPreInitializationEvent event) {
-
+        MinecraftForge.EVENT_BUS.register(this);
+        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.PRE_INIT);
+        ModConfigManager.init(event.getModConfigurationDirectory());
     }
 
     /**
@@ -42,7 +51,7 @@ public class CDRPCmod {
      */
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
-
+        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.INIT);
     }
 
     /**
@@ -50,65 +59,45 @@ public class CDRPCmod {
      */
     @Mod.EventHandler
     public void postinit(FMLPostInitializationEvent event) {
-
+        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.POST_INIT);
+    }
+    
+    @Mod.EventHandler
+    public void serverAboutTostart(FMLServerAboutToStartEvent e)
+    {
+        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_ABOUT_TO_START);
+    }
+    
+    @Mod.EventHandler
+    public void severStarting(FMLServerStartingEvent e)
+    {
+        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_STARTING);
     }
 
-    /**
-     * Forge will automatically look up and bind blocks to the fields in this class
-     * based on their registry name.
-     */
-    @GameRegistry.ObjectHolder(MOD_ID)
-    public static class Blocks {
-      /*
-          public static final MySpecialBlock mySpecialBlock = null; // placeholder for special block below
-      */
+    @Mod.EventHandler
+    public void serverStopping(FMLServerStoppingEvent e)
+    {
+        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_STOPPING);
     }
 
-    /**
-     * Forge will automatically look up and bind items to the fields in this class
-     * based on their registry name.
-     */
-    @GameRegistry.ObjectHolder(MOD_ID)
-    public static class Items {
-      /*
-          public static final ItemBlock mySpecialBlock = null; // itemblock for the block above
-          public static final MySpecialItem mySpecialItem = null; // placeholder for special item below
-      */
+    @Mod.EventHandler
+    public void serverStopped(FMLServerStoppedEvent e)
+    {
+        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_STOPPED);
     }
 
-    /**
-     * This is a special class that listens to registry events, to allow creation of mod blocks and items at the proper time.
-     */
-    @Mod.EventBusSubscriber
-    public static class ObjectRegistryHandler {
-        /**
-         * Listen for the register event for creating custom items
-         */
-        @SubscribeEvent
-        public static void addItems(RegistryEvent.Register<Item> event) {
-           /*
-             event.getRegistry().register(new ItemBlock(Blocks.myBlock).setRegistryName(MOD_ID, "myBlock"));
-             event.getRegistry().register(new MySpecialItem().setRegistryName(MOD_ID, "mySpecialItem"));
-            */
-        }
+    @Mod.EventHandler
+    public void serverStarted(FMLServerStartedEvent e)
+    {
+        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_STARTED);
+    }
 
-        /**
-         * Listen for the register event for creating custom blocks
-         */
-        @SubscribeEvent
-        public static void addBlocks(RegistryEvent.Register<Block> event) {
-           /*
-             event.getRegistry().register(new MySpecialBlock().setRegistryName(MOD_ID, "mySpecialBlock"));
-            */
+    @SubscribeEvent
+    public void guiScreenDetect(GuiScreenEvent.InitGuiEvent.Pre e)
+    {
+        if(e.getGui() instanceof GuiMainMenu)
+        {
+            ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.MAIN_MENU_REACHED);
         }
     }
-    /* EXAMPLE ITEM AND BLOCK - you probably want these in separate files
-    public static class MySpecialItem extends Item {
-
-    }
-
-    public static class MySpecialBlock extends Block {
-
-    }
-    */
 }
