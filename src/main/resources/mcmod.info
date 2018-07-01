@@ -2,16 +2,16 @@
   {
     "modid": "customdiscordrpc",
     "name": "Custom Discord RPC",
-    "description": "This mod allows you to use custom Rich Presense Text for the Discord client.",
+    "description": "This mod allows you to use custom Rich Presence Text for the Discord client.",
     "version": "${version}",
     "mcversion": "${mcversion}",
     "url": "",
-    "updateUrl": "none",
+    "updateUrl": "https://raw.githubusercontent.com/jaideepheer/MinecraftForge-custom_discordRPC/master/src/main/resources/update.json",
     "authorList": [
       "Jaideep_Singh_Heer"
     ],
     "credits": "",
-    "logoFile": "",
+    "logoFile": "icon.png",
     "screenshots": [],
     "dependencies": [
       ""

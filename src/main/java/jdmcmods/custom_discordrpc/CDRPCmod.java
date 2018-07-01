@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.ModMetadata;
 import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.apache.logging.log4j.LogManager;
@@ -13,7 +14,9 @@ import org.apache.logging.log4j.Logger;
         modid = CDRPCmod.MOD_ID,
         name = CDRPCmod.MOD_NAME,
         version = CDRPCmod.VERSION,
-        updateJSON = "https://raw.githubusercontent.com/jaideepheer/MinecraftForge-custom_discordRPC/master/src/main/resources/update.json",
+        acceptedMinecraftVersions = "*",
+        canBeDeactivated = true,
+        updateJSON = CDRPCmod.UPDATE_JSON,
         clientSideOnly = true
 )
 public class CDRPCmod {
@@ -21,8 +24,13 @@ public class CDRPCmod {
     public static final String MOD_ID = "customdiscordrpc";
     public static final String MOD_NAME = "Custom Discord RPC";
     public static final String VERSION = "0.91";
+    public static final String UPDATE_JSON = "https://raw.githubusercontent.com/jaideepheer/MinecraftForge-custom_discordRPC/master/src/main/resources/update.json";
 
     public static Logger LOGGER = LogManager.getLogger();
+
+    // Ask forge to point this variable to the ModMetaData object of this mod.
+    @Mod.Metadata(value = MOD_ID)
+    public static ModMetadata metadata;
 
     private final ModConfigManager configManager = new ModConfigManager();
 
@@ -42,6 +50,16 @@ public class CDRPCmod {
      */
     @Mod.EventHandler
     public void preinit(FMLPreInitializationEvent event) {
+        // Init. metadata
+        metadata = event.getModMetadata();
+        // Set the metadata
+        metadata.authorList.add(0,"Jaideep Singh Heer");
+        metadata.version = VERSION;
+        metadata.description = "This mod allows you to use custom Rich Presence Text for the Discord client.";
+        metadata.updateJSON = UPDATE_JSON;
+        metadata.logoFile = "icon.png";
+        metadata.modId = MOD_ID;
+
         MinecraftForge.EVENT_BUS.register(this);
         ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.PRE_INIT);
         ModConfigManager.init(event.getModConfigurationDirectory());
