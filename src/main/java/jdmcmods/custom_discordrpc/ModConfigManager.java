@@ -240,9 +240,10 @@ class ModConfigManager
                 {
                     // APP ID changed
                     LOGGER.log(Level.INFO,"APP ID changed from \'"+prevAPPID+"\' to \'"+config.discordAppID+"\'");
-                    discordRPCHandler.stopRPC();
-                    discordRPCHandler.startRPC();
                 }
+                // restart daemon after config load
+                discordRPCHandler.stopRPC();
+                discordRPCHandler.startRPC();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -300,42 +301,56 @@ class ModConfigManager
                 .setGameState("Just Started")
                 .setDetails("Waiting for Mod to init.")
                 .setStartTimedealy(0)
+                .setBigImage("juststrtedbig","Starting up")
+                .setSmallImage("juststartedsmall","Hi")
         );
         config.RTProfileList.put("preInit",new RichTextProfile()
                 .setActivationEvent(LatestEvent.PRE_INIT)
                 .setGameState("Pre-Init.")
                 .setDetails("Forge Loading in pre-init.")
                 .setStartTimedealy(0)
+                .setBigImage("preinitbig","This won't take long")
+                .setSmallImage("preinitsmall","pre-init")
         );
         config.RTProfileList.put("init",new RichTextProfile()
                 .setActivationEvent(LatestEvent.INIT)
                 .setGameState("Init.")
                 .setDetails("Forge Loading in init.")
                 .setStartTimedealy(0)
+                .setBigImage("initbig","Working on it")
+                .setSmallImage("initsmall","init")
         );
         config.RTProfileList.put("postInit",new RichTextProfile()
                 .setActivationEvent(LatestEvent.POST_INIT)
                 .setGameState("Post-Init.")
                 .setDetails("Forge Loading in post-init.")
                 .setStartTimedealy(0)
+                .setBigImage("postinitbig","Almost there")
+                .setSmallImage("postinitsmall","post-init")
         );
         config.RTProfileList.put("mainMenu",new RichTextProfile()
                 .setActivationEvent(LatestEvent.MAIN_MENU_REACHED)
                 .setGameState("In main menu.")
                 .setDetails("Idle")
                 .setStartTimedealy(0)
+                .setBigImage("mainmenu","Surfing the menus")
+                .setSmallImage("mainmenu","main-menu")
         );
         config.RTProfileList.put("serverAboutToStart",new RichTextProfile()
                 .setActivationEvent(LatestEvent.SERVER_ABOUT_TO_START)
                 .setGameState("Loading Screen")
                 .setDetails("Loading Single Player Server")
                 .setStartTimedealy(0)
+                .setBigImage("serverabouttostartbig","Getting ready to roll")
+                .setSmallImage("serverabouttostartsmall","server-about-to-start")
         );
         config.RTProfileList.put("serverStarted",new RichTextProfile()
                 .setActivationEvent(LatestEvent.SERVER_STARTED)
                 .setGameState("In-game")
                 .setDetails("Playing Single Player")
                 .setStartTimedealy(0)
+                .setBigImage("serverstartedbig","Currently causing havoc ;)")
+                .setSmallImage("serverstartedsmall","in-game")
         );
         LOGGER.log(Level.INFO,"Config defaults set.");
     }
