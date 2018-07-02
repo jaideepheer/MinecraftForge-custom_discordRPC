@@ -10,6 +10,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+
 @Mod(
         modid = CDRPCmod.MOD_ID,
         name = CDRPCmod.MOD_NAME,
@@ -28,6 +30,8 @@ public class CDRPCmod {
     public static final String UPDATE_JSON = "https://raw.githubusercontent.com/jaideepheer/MinecraftForge-custom_discordRPC/master/src/main/resources/update.json";
 
     public static Logger LOGGER = LogManager.getLogger(MOD_ID);
+
+    public static File CONFIG_DIR;
 
     // Ask forge to point this variable to the ModMetaData object of this mod.
     @Mod.Metadata(value = MOD_ID)
@@ -63,7 +67,8 @@ public class CDRPCmod {
 
         MinecraftForge.EVENT_BUS.register(this);
         ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.PRE_INIT);
-        ModConfigManager.init(event.getModConfigurationDirectory());
+        CONFIG_DIR = event.getModConfigurationDirectory();
+        ModConfigManager.init(CONFIG_DIR);
     }
 
     /**

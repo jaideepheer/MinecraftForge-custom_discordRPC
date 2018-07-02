@@ -14,13 +14,13 @@ import java.util.Map;
 
 import static jdmcmods.custom_discordrpc.CDRPCmod.LOGGER;
 
-class ModConfigManager
+public class ModConfigManager
 {
     private static File configFile;
     private static Gson gson;
     private static ModConfig config = new ModConfig();
 
-    static LatestEvent latestEvent;
+    public static LatestEvent latestEvent;
 
     static {
         latestEvent = LatestEvent.JUST_STARTED;
@@ -50,7 +50,7 @@ class ModConfigManager
         public Map<String,RichTextProfile> RTProfileList = new LinkedHashMap<>();
     }
 
-    static class RichTextProfile
+    public static class RichTextProfile
     {
         @SerializedName("Activation Event")
         LatestEvent activationEvent;
@@ -84,6 +84,8 @@ class ModConfigManager
         String joinSecret = null;
         @SerializedName("Spectate Secret")
         String spectateSecret = null;
+        @SerializedName("Modification JavaScript")
+        String modifyScript = null;
 
         private DiscordRichPresence richPresence;
 
@@ -259,6 +261,7 @@ class ModConfigManager
 
     private static void loadConfig()
     {
+        // Set all to null
         try {
             BufferedReader reader = new BufferedReader(new FileReader(configFile));
             config = gson.fromJson(reader,ModConfig.class);

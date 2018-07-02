@@ -1,12 +1,15 @@
 package jdmcmods.custom_discordrpc;
 
+import jdmcmods.custom_discordrpc.ScriptEngine.modScriptEngine;
 import net.arikia.dev.drpc.DiscordEventHandlers;
 import net.arikia.dev.drpc.DiscordRPC;
+import net.arikia.dev.drpc.DiscordRichPresence;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.apache.logging.log4j.Level;
 
+import javax.script.ScriptException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -14,8 +17,10 @@ import static jdmcmods.custom_discordrpc.CDRPCmod.LOGGER;
 
 public class discordRPCHandler {
     private static DiscordEventHandlers eventHandlers = discordEventHandlers.getEventHandlers();
+    private static modScriptEngine scriptEngine;
     private static long lastRPCUpdateTime=-1L;
     private static Thread RPCWatchdogThread = null;
+    private static final Object ThreadSyncLock = new Object();
 
     private static final Object discordCallbackExecutor = new Object(){
         @SubscribeEvent
@@ -34,6 +39,9 @@ public class discordRPCHandler {
 
             // Initialize discordRPC
             DiscordRPC.discordInitialize(config.discordAppID, eventHandlers, true);
+
+            // Create new script engine
+            scriptEngine = new modScriptEngine();
 
             // register callback executor to rpc events
             MinecraftForge.EVENT_BUS.register(discordCallbackExecutor);
@@ -81,21 +89,42 @@ public class discordRPCHandler {
                 for(Map.Entry<String,ModConfigManager.RichTextProfile> entry:config.RTProfileList.entrySet())
                 {
                     // Check if current profile is the one to use
-                    if(entry.getValue().shouldActivate() && !entry.getKey().equals(prevProfileName))
+                    if(entry.getValue().shouldActivate())
                     {
-                        // Only update if profile changed
-                        prevProfileName = entry.getKey();
                         textProfile = entry.getValue();
-                        profileChanged = true;
+                        if(!entry.getKey().equals(prevProfileName)) {
+                            // Only update if profile changed
+                            prevProfileName = entry.getKey();
+                            profileChanged = true;
+                            LOGGER.log(Level.DEBUG, "Profile changed to '" + prevProfileName + "'");
+                        }
                         break;
                     }
                 }
 
-                if(textProfile!=null) {
+                if(textProfile!=null && isRunning.get()) {
+                    // Get RichPresence
+                    DiscordRichPresence presence = textProfile.getRichPresence(profileChanged);
+                    if(textProfile.modifyScript != null) {
+                        long timestamp = System.currentTimeMillis();
+                        // Run script engine to allow modifications
+                        try {
+                            scriptEngine.eval(textProfile.modifyScript, presence, prevProfileName, profileChanged);
+                        } catch (ScriptException e) {
+                            e.printStackTrace();
+                            LOGGER.log(Level.ERROR, "Script execution failed for profile '"+prevProfileName+"'");
+                        }
+                        // Log the script execution time
+                        LOGGER.log(Level.DEBUG, "Script execution for profile '"+prevProfileName+"' took: " + (System.currentTimeMillis() - timestamp) + "ms.");
+                    }
                     // Update Rich presence
-                    DiscordRPC.discordUpdatePresence(textProfile.getRichPresence(profileChanged));
+                    synchronized (ThreadSyncLock)
+                    {
+                        if(isRunning.get())DiscordRPC.discordUpdatePresence(presence);
+                    }
                     profileChanged = false;
                     LOGGER.log(Level.DEBUG,"RPCWatchdogThread: RPC updated.[Event: "+ModConfigManager.latestEvent+"]"
+                            +"[Profile: "+prevProfileName+"]"
                             +"(+"+ (System.currentTimeMillis() - lastRPCUpdateTime) + " sec.)"
                     );
                     lastRPCUpdateTime = System.currentTimeMillis();
@@ -103,6 +132,7 @@ public class discordRPCHandler {
 
             }
         },"DiscordRPCWatchdogThread["+ModConfigManager.getModConfig().discordAppID+"]");
+        RPCWatchdogThread.setDaemon(true);
         RPCWatchdogThread.start();
     }
 
@@ -110,7 +140,10 @@ public class discordRPCHandler {
     {
         if(isRPCRunning.getAndSet(false)) {
             MinecraftForge.EVENT_BUS.unregister(discordCallbackExecutor);
-            DiscordRPC.discordShutdown();
+            synchronized (ThreadSyncLock)
+            {
+                DiscordRPC.discordShutdown();
+            }
             isRPCRunning = new AtomicBoolean(false);
         }
     }
@@ -119,5 +152,6 @@ public class discordRPCHandler {
     protected void finalize() throws Throwable {
         super.finalize();
         stopRPC();
+        DiscordRPC.discordShutdown();
     }
 }
