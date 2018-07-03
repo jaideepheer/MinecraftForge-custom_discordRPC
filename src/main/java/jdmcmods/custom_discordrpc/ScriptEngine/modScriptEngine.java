@@ -51,7 +51,6 @@ public class modScriptEngine {
 
         // Get the ClassFilter class object
         Class classFilter = nashornUsedClasses.get("jdk.nashorn.api.scripting.ClassFilter");
-        System.out.println("classFilter = "+classFilter);
 
         if(nashornFactory !=null && classFilter != null) {
             try {
@@ -130,9 +129,9 @@ public class modScriptEngine {
                 LOGGER.log(Level.INFO,"Factory class = "+f.getClass());
 
                 // List of methods to check for obfuscation
-                LOGGER.log(Level.INFO,"Factory Method list:-");
+                LOGGER.log(Level.DEBUG,"Factory Method list:-");
                 for (Method method : f.getClass().getDeclaredMethods()) {
-                    LOGGER.log(Level.INFO,method.getName());
+                    LOGGER.log(Level.DEBUG,method.getName()+", Parameter Types:-");
                     for(Class<?> c:method.getParameterTypes())
                     {
                         LOGGER.log(Level.DEBUG,c.getName());
