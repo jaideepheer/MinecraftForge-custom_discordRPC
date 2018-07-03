@@ -11,6 +11,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 @Mod(
         modid = CDRPCmod.MOD_ID,
@@ -32,6 +42,7 @@ public class CDRPCmod {
     public static Logger LOGGER = LogManager.getLogger(MOD_ID);
 
     public static File CONFIG_DIR;
+    public static Path executionRoot;
 
     // Ask forge to point this variable to the ModMetaData object of this mod.
     @Mod.Metadata(value = MOD_ID)
@@ -41,6 +52,19 @@ public class CDRPCmod {
 
     static {
         discordRPCHandler.startRPC();
+        /*try {
+            URI uri = CDRPCmod.class.getResource("/").toURI();
+            if (uri.getScheme().equals("jar")) {
+                FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap());
+                executionRoot = fileSystem.getPath("/");
+            } else {
+                executionRoot = Paths.get(uri);
+            }
+            Stream<Path> walk = Files.walk(executionRoot, 1);
+            for (Iterator<Path> it = walk.iterator(); it.hasNext(); ) {
+                System.out.println(it.next());
+            }
+        }catch (Exception e){e.printStackTrace(); executionRoot = null;}*/
     }
 
     /**

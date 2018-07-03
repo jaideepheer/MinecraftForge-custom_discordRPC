@@ -17,7 +17,6 @@ import static jdmcmods.custom_discordrpc.CDRPCmod.LOGGER;
 
 public class discordRPCHandler {
     private static DiscordEventHandlers eventHandlers = discordEventHandlers.getEventHandlers();
-    private static modScriptEngine scriptEngine;
     private static long lastRPCUpdateTime=-1L;
     private static Thread RPCWatchdogThread = null;
     private static final Object ThreadSyncLock = new Object();
@@ -40,8 +39,8 @@ public class discordRPCHandler {
             // Initialize discordRPC
             DiscordRPC.discordInitialize(config.discordAppID, eventHandlers, true);
 
-            // Create new script engine
-            scriptEngine = new modScriptEngine();
+            // Reset the script engine
+            modScriptEngine.resetEngine();
 
             // register callback executor to rpc events
             MinecraftForge.EVENT_BUS.register(discordCallbackExecutor);
@@ -109,7 +108,7 @@ public class discordRPCHandler {
                         long timestamp = System.currentTimeMillis();
                         // Run script engine to allow modifications
                         try {
-                            scriptEngine.eval(textProfile.modifyScript, presence, prevProfileName, profileChanged);
+                            modScriptEngine.eval(textProfile.modifyScript, presence, prevProfileName, profileChanged);
                         } catch (ScriptException e) {
                             e.printStackTrace();
                             LOGGER.log(Level.ERROR, "Script execution failed for profile '"+prevProfileName+"'");

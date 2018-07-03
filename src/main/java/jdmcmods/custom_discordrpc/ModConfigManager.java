@@ -311,7 +311,7 @@ public class ModConfigManager
                 .setStartTimedealy(0)
                 .setBigImage("juststrtedbig","Starting up")
                 .setSmallImage("juststartedsmall","Hi")
-                .setModifyScript("print(Helper.getPlayerName())")
+                .setModifyScript("RichPresence.smallImageText = Helper.getUserName()")
         );
         config.RTProfileList.put("preInit",new RichTextProfile()
                 .setActivationEvent(LatestEvent.PRE_INIT)
@@ -320,6 +320,7 @@ public class ModConfigManager
                 .setStartTimedealy(0)
                 .setBigImage("preinitbig","This won't take long")
                 .setSmallImage("preinitsmall","pre-init")
+                .setModifyScript("RichPresence.smallImageText = Helper.getUserName()")
         );
         config.RTProfileList.put("init",new RichTextProfile()
                 .setActivationEvent(LatestEvent.INIT)
@@ -328,6 +329,7 @@ public class ModConfigManager
                 .setStartTimedealy(0)
                 .setBigImage("initbig","Working on it")
                 .setSmallImage("initsmall","init")
+                .setModifyScript("RichPresence.smallImageText = Helper.getUserName()")
         );
         config.RTProfileList.put("postInit",new RichTextProfile()
                 .setActivationEvent(LatestEvent.POST_INIT)
@@ -336,6 +338,7 @@ public class ModConfigManager
                 .setStartTimedealy(0)
                 .setBigImage("postinitbig","Almost there")
                 .setSmallImage("postinitsmall","post-init")
+                .setModifyScript("RichPresence.smallImageText = Helper.getUserName()")
         );
         config.RTProfileList.put("mainMenu",new RichTextProfile()
                 .setActivationEvent(LatestEvent.MAIN_MENU_REACHED)
@@ -344,6 +347,7 @@ public class ModConfigManager
                 .setStartTimedealy(0)
                 .setBigImage("mainmenu","Surfing the menus")
                 .setSmallImage("mainmenu","main-menu")
+                .setModifyScript("RichPresence.smallImageText = Helper.getUserName()")
         );
         config.RTProfileList.put("serverAboutToStart",new RichTextProfile()
                 .setActivationEvent(LatestEvent.SERVER_ABOUT_TO_START)
@@ -352,6 +356,7 @@ public class ModConfigManager
                 .setStartTimedealy(0)
                 .setBigImage("serverabouttostartbig","Getting ready to roll")
                 .setSmallImage("serverabouttostartsmall","server-about-to-start")
+                .setModifyScript("RichPresence.smallImageText = Helper.getUserName()")
         );
         config.RTProfileList.put("serverStarted",new RichTextProfile()
                 .setActivationEvent(LatestEvent.SERVER_STARTED)
@@ -360,6 +365,7 @@ public class ModConfigManager
                 .setStartTimedealy(0)
                 .setBigImage("serverstartedbig","Currently causing havoc ;)")
                 .setSmallImage("serverstartedsmall","in-game")
+                .setModifyScript("RichPresence.smallImageText = Helper.getUserName()")
         );
         LOGGER.log(Level.INFO,"Config defaults set.");
     }

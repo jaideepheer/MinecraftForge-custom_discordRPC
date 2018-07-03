@@ -1,6 +1,5 @@
 package jdmcmods.custom_discordrpc.ScriptEngine;
 
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import jdmcmods.custom_discordrpc.CDRPCmod;
 import jdmcmods.custom_discordrpc.ModConfigManager;
 import net.arikia.dev.drpc.DiscordRichPresence;
@@ -14,28 +13,140 @@ import org.apache.logging.log4j.Level;
 
 import javax.script.*;
 import java.io.File;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.*;
 import java.util.function.Consumer;
 
-public class modScriptEngine {
-    private final ScriptEngine engine;
+import static jdmcmods.custom_discordrpc.CDRPCmod.LOGGER;
 
-    public modScriptEngine()
+public class modScriptEngine {
+    private static final ScriptEngine engine;
+
+    static {
+        engine = makeScriptEngine();
+        resetEngine();
+    }
+
+    public static ScriptEngine getEngine() {
+        return engine;
+    }
+
+    public static void resetEngine()
     {
-        // prevent access to java.* , javax.* and jdmcmods.*
-        engine = new NashornScriptEngineFactory().getScriptEngine((className)->
-                !(className.startsWith("java")
-                        || className.startsWith("jdmcmods")
-                        || className.startsWith("javax")
-                        || className.equals("net.minecraft.util.Session")
-                )
-        );
         Bindings b = engine.getBindings(ScriptContext.ENGINE_SCOPE);
         b.remove("exit");
         b.remove("quit");
-        engine.put("Helper",new ScriptHelper());
+        engine.put("Helper", new ScriptHelper());
     }
 
-    public void eval(String script, DiscordRichPresence currentRP, String currentProfileName, boolean hasProfileJustChanged)throws ScriptException
+    private static ScriptEngine makeScriptEngine()
+    {
+        ScriptEngine engine = null;
+
+        HashMap<String,Class<?>> nashornUsedClasses = new HashMap<>();
+        ScriptEngineFactory nashornFactory = getNashornScriptEngineFactory(nashornUsedClasses);
+
+        // Get the ClassFilter class object
+        Class classFilter = nashornUsedClasses.get("jdk.nashorn.api.scripting.ClassFilter");
+        System.out.println("classFilter = "+classFilter);
+
+        if(nashornFactory !=null && classFilter != null) {
+            try {
+                // Use Dynamic Proxy to create an instance of ClassFilter(interface)
+                Object classFilterInstance = Proxy.newProxyInstance(classFilter.getClassLoader(), new Class<?>[]{classFilter}, new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        if(args!=null && method !=null && method.getName().equals("exposeToScripts") && args.length>0 && args[0] != null)
+                        {
+                            String className = (String) args[0];
+                            return !(className.startsWith("java")
+                                    || className.startsWith("jdmcmods")
+                                    || className.startsWith("javax")
+                                    || className.equals("net.minecraft.util.Session")
+                            );
+                        }
+                        else return false;
+                    }
+                });
+                Method getScriptEngine = nashornFactory.getClass().getMethod("getScriptEngine",classFilter);
+                engine = (ScriptEngine) getScriptEngine.invoke(nashornFactory,classFilterInstance);
+            } catch (NoSuchMethodException e) {
+                LOGGER.log(Level.ERROR, "Couldn't find getScriptEngine(ClassLoader) method in nashornFactory.");
+                e.printStackTrace();
+            }
+            catch (IllegalArgumentException e){
+                LOGGER.log(Level.ERROR,"Probably couldn't create ClassFilter instance.");
+                e.printStackTrace();
+            }
+            catch (IllegalAccessException e){
+                LOGGER.log(Level.ERROR,"Couldn't access NashornScriptEngineFacroty's getScriptEngine(ClassFilter) function.");
+                e.printStackTrace();
+            }
+            catch (InvocationTargetException e){
+                LOGGER.log(Level.ERROR,"Couldn't create NashornScriptEngine from factory using custom ClassLoader.");
+                e.printStackTrace();
+            }
+        }
+        else {
+            LOGGER.log(Level.ERROR,"Something didn't go right, got a null.");
+            LOGGER.log(Level.ERROR,"nashornFactory = "+nashornFactory);
+            LOGGER.log(Level.ERROR,"classFilter = "+classFilter);
+        }
+        if (engine == null) {
+            LOGGER.log(Level.FATAL,"engine was still null after all that hack");
+            LOGGER.log(Level.FATAL,"engine="+engine);
+        }
+
+        return engine;
+    }
+
+    /**
+     * Uses hack to get a NashornScriptEngineFactory object.
+     * @param nashornUsedClasses all classes detected in the NashornScriptEngineFactory class are added to this map where the key is the full name of the class.
+     * @return the NashornScriptEngineFactory object
+     */
+    private static ScriptEngineFactory getNashornScriptEngineFactory(Map<String,Class<?>> nashornUsedClasses)
+    {
+        // First create a new ScriptEngineManager with null class loader to force it to load classes automatically.
+        LOGGER.log(Level.INFO,"Attempting hack to get NashornScriptEngineFactory object.");
+        ScriptEngineManager s = new ScriptEngineManager(null);
+        LOGGER.log(Level.DEBUG,"New ScriptEngineManager with 'null' classloader created.");
+
+        // DEBUG
+        LOGGER.log(Level.DEBUG,"Loaded ScriptEngineFactory count = "+s.getEngineFactories().size());
+        LOGGER.log(Level.DEBUG,"getEngineByName(\"nashorn\") = "+s.getEngineByName("nashorn"));
+
+        // Loop through list of ScriptEngineFactory to find NashornScriptEngineFactory
+        for(ScriptEngineFactory f :s.getEngineFactories())
+        {
+            // Check name
+            if(f.getEngineName().endsWith("Nashorn"))
+            {
+                LOGGER.log(Level.INFO,"Found Nashorn ScriptEngineFactory.");
+                LOGGER.log(Level.INFO,"Factory engine name = "+f.getEngineName());
+                LOGGER.log(Level.INFO,"Factory class = "+f.getClass());
+
+                // List of methods to check for obfuscation
+                LOGGER.log(Level.INFO,"Factory Method list:-");
+                for (Method method : f.getClass().getDeclaredMethods()) {
+                    LOGGER.log(Level.INFO,method.getName());
+                    for(Class<?> c:method.getParameterTypes())
+                    {
+                        LOGGER.log(Level.DEBUG,c.getName());
+                        nashornUsedClasses.put(c.getName(),c);
+                    }
+                }
+
+                return f;
+            }
+        }
+        return null;
+    }
+
+    public static void eval(String script, DiscordRichPresence currentRP, String currentProfileName, boolean hasProfileJustChanged)throws ScriptException
     {
         engine.put("RichPresence", currentRP);
         engine.put("CurrentProfileName", currentProfileName);
