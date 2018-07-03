@@ -128,6 +128,11 @@ public class ModConfigManager
             return this;
         }
 
+        public RichTextProfile setModifyScript(String modifyScript) {
+            this.modifyScript = modifyScript;
+            return this;
+        }
+
         /**
          * Takes timestamps in seconds, i.e. System.currentTimeMillis()/1000 + T
          * @param startTimestamp timestamp for time time left to start, shows as elapsed
@@ -306,6 +311,7 @@ public class ModConfigManager
                 .setStartTimedealy(0)
                 .setBigImage("juststrtedbig","Starting up")
                 .setSmallImage("juststartedsmall","Hi")
+                .setModifyScript("print(Helper.getPlayerName())")
         );
         config.RTProfileList.put("preInit",new RichTextProfile()
                 .setActivationEvent(LatestEvent.PRE_INIT)
