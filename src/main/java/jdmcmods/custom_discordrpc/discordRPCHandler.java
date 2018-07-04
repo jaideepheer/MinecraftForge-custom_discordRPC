@@ -56,12 +56,14 @@ public class discordRPCHandler {
     {
         RPCWatchdogThread = new Thread(()->{
             // set discord min update interval
-            long discordMinUpdateInterval = 15;
-            long delay = 15;
+            long discordMinUpdateIntervalSec = 15;
+            long scriptMinUpdateIntervalMilli = 2000;
+            long delay;
             ModConfigManager.ModConfig config = ModConfigManager.getModConfig();
             ModConfigManager.RichTextProfile textProfile = null;
             String prevProfileName = null;
             boolean profileChanged = true;
+            boolean isUpdateCancelled = false;
             AtomicBoolean isRunning = isRPCRunning;
 
             // run while isRPCRunning is true
@@ -69,10 +71,14 @@ public class discordRPCHandler {
 
                 // calculate delay
                 delay = System.currentTimeMillis()-lastRPCUpdateTime;
+                delay = discordMinUpdateIntervalSec*1000 - delay;
+
+                // set min. delay and reset isUpdateCancelled
+                delay = scriptMinUpdateIntervalMilli>delay?scriptMinUpdateIntervalMilli:delay;
+                isUpdateCancelled = false;
 
                 // wait 15 sec. before update
                 try {
-                    delay = discordMinUpdateInterval*1000 - delay;
                     Thread.sleep(delay>0?delay:0);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -109,24 +115,40 @@ public class discordRPCHandler {
                         // Run script engine to allow modifications
                         try {
                             modScriptEngine.eval(textProfile.modifyScript, presence, prevProfileName, profileChanged);
-                        } catch (ScriptException e) {
+                        }
+                        catch (ScriptException e) {
                             e.printStackTrace();
-                            LOGGER.log(Level.ERROR, "Script execution failed for profile '"+prevProfileName+"'");
+                            LOGGER.log(Level.ERROR, "Script execution failed for profile '" + prevProfileName + "'");
+                        }
+                        catch (RuntimeException e)
+                        {
+                            if(e.getCause() instanceof modScriptEngine.CancellScriptUpdateException)
+                            {
+                                LOGGER.log(Level.INFO, "Script cancelled RPC update."
+                                        +"[Profile: "+prevProfileName+"]"
+                                        +"[LatestEvent: "+ModConfigManager.latestEvent+"]");
+                                isUpdateCancelled = true;
+                            }
+                            else {
+                                e.printStackTrace();
+                                LOGGER.log(Level.ERROR, "Script threw an exception [Profile: " + prevProfileName + "]");
+                            }
                         }
                         // Log the script execution time
                         LOGGER.log(Level.DEBUG, "Script execution for profile '"+prevProfileName+"' took: " + (System.currentTimeMillis() - timestamp) + "ms.");
                     }
-                    // Update Rich presence
-                    synchronized (ThreadSyncLock)
-                    {
-                        if(isRunning.get())DiscordRPC.discordUpdatePresence(presence);
+                    if(!isUpdateCancelled) {
+                        // Update Rich presence
+                        synchronized (ThreadSyncLock) {
+                            if (isRunning.get()) DiscordRPC.discordUpdatePresence(presence);
+                        }
+                        LOGGER.log(Level.DEBUG, "RPCWatchdogThread: RPC updated.[Event: " + ModConfigManager.latestEvent + "]"
+                                + "[Profile: " + prevProfileName + "]"
+                                + "(+" + (System.currentTimeMillis() - lastRPCUpdateTime) + " sec.)"
+                        );
+                        lastRPCUpdateTime = System.currentTimeMillis();
                     }
                     profileChanged = false;
-                    LOGGER.log(Level.DEBUG,"RPCWatchdogThread: RPC updated.[Event: "+ModConfigManager.latestEvent+"]"
-                            +"[Profile: "+prevProfileName+"]"
-                            +"(+"+ (System.currentTimeMillis() - lastRPCUpdateTime) + " sec.)"
-                    );
-                    lastRPCUpdateTime = System.currentTimeMillis();
                 }
 
             }

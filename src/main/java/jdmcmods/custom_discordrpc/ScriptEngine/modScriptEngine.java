@@ -151,24 +151,14 @@ public class modScriptEngine {
         engine.put("CurrentProfileName", currentProfileName);
         engine.put("hasProfileChanged",hasProfileJustChanged);
         engine.put("log",(Consumer<String>)CDRPCmod.LOGGER::info);
-        try{engine.eval(script);}
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            CDRPCmod.LOGGER.log(Level.ERROR,"Script threw an exception.[Profile: "+currentProfileName+"]");
-        }
+        engine.eval(script);
     }
 
     public static class ScriptHelper
     {
-        public Minecraft getMinecraft()
-        {
-            return Minecraft.getMinecraft();
-        }
-        public String getMCVERSION()
-        {
-            return MinecraftForge.MC_VERSION;
-        }
+        //=====================
+        // Mod Related Helpers
+        //=====================
         public File getConfigDir()
         {
             return CDRPCmod.CONFIG_DIR;
@@ -177,12 +167,27 @@ public class modScriptEngine {
         {
             return ModConfigManager.latestEvent.toString();
         }
+        public void cancellUpdate()throws CancellScriptUpdateException{throw new CancellScriptUpdateException("Script update cancelled");}
 
         //======================
         // Game Related Helpers
         //======================
         public long getMinecraftStartTimeMillis(){
             return getMinecraft().getPlayerUsageSnooper().getMinecraftStartTimeMillis();
+        }
+        public Minecraft getMinecraft()
+        {
+            return Minecraft.getMinecraft();
+        }
+        public String getMCVERSION()
+        {
+            return MinecraftForge.MC_VERSION;
+        }
+        public Object cancellUpdateIfMatch(Object o, Object toMatch) throws CancellScriptUpdateException {
+            if((o == toMatch)||(o!=null && o.equals(toMatch))){
+                cancellUpdate();
+            }
+            return o;
         }
 
         //=======================
@@ -192,8 +197,9 @@ public class modScriptEngine {
         {
             return getMinecraft().world;
         }
+        public String getWorldName(){try{return getMinecraft().getIntegratedServer().getWorldName();}catch (Exception e){e.printStackTrace();return null;}}
         public WorldInfo getWorldInfo() {
-            try{return getWorld().getWorldInfo();}catch (Exception e){return null;}
+            try{return getWorld().getWorldInfo();}catch (Exception e){e.printStackTrace();return null;}
         }
         public File getWorldDirectory(){
             return DimensionManager.getCurrentSaveRootDirectory();
@@ -209,7 +215,7 @@ public class modScriptEngine {
         // Dimension Related Helpers
         //===========================
         public String getDimensionName(){
-            return getWorldProvider().getDimensionType().getName();
+            try{return getWorldProvider().getDimensionType().getName();}catch (Exception e){e.printStackTrace();return null;}
         }
         public int getDimensionID(){
             return getWorldProvider().getDimension();
@@ -219,7 +225,12 @@ public class modScriptEngine {
         // User Related Helpers
         //======================
         public String getUserName(){
-            return getMinecraft().getSession().getUsername();
+            try{return getMinecraft().getSession().getUsername();}catch (Exception e){e.printStackTrace();return null;}
+        }
+    }
+    public static class CancellScriptUpdateException extends ScriptException {
+        public CancellScriptUpdateException(String s) {
+            super(s);
         }
     }
 }
