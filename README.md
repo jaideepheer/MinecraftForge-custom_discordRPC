@@ -183,3 +183,25 @@ If this property is not present in a profile then that profile will never be act
   * You can create your own profiles with different names, however, each profile should have a unique `name` and a unique `Activation Event`.
   * You do __not__ have to create a profile for every `Activation Event`.
   * You do __not__ have to specify all the properties for a profile.
+  
+  # Modification Javascript
+  Each profile has a `Modification JavaScript` property that can be set using the config file.
+  
+  This property's value __must__ be a String containing valid javascript code.
+  
+  The provided script is executed using the __Nashorn__ engine and is __pre-loaded__ with the following variables that can be used for processing.
+  
+  <details>
+  <summary>Pre-Loaded variables</summary>
+  <p>
+
+| Variable Name | Data Type | Description |
+|---------------|-----------|-------------|
+| RichPresence | `net.arikia.dev.drpc.DiscordRichPresence` | This is the `DiscordRichPresence` object that will be passed in the current update to discord and it stores all the information regarding the rich presence. You must change this objects properties to change what is displayed in the rich presence. See [net.arikia.dev.drpc.DiscordRichPresence](https://github.com/Vatuu/discord-rpc/blob/master/src/main/java/net/arikia/dev/drpc/DiscordRichPresence.java)|
+| CurrentProfileName | `String` | This is the name of the currently active profile. (Hint: You can use this to make a single js file that behaves differently for different profiles and is executed using the `load()` function) |
+| hasProfileChanged | `boolean` | This is a boolean value that is only true when a profile has been changed. __Note__ that after a single execution this value is false even if the RPC update was cancelled using the [ScriptHelper::cancellUpdate()](https://github.com/jaideepheer/MinecraftForge-custom_discordRPC/blob/5f9d87adc33e628df24a4a808ca45aa157231018/src/main/java/jdmcmods/custom_discordrpc/ScriptEngine/modScriptEngine.java#L170). |
+| log | org.apache.logging.log4j.Logger::info | This is the logger function used to print output to the log. Just send it an object ant it'll print it to the log. For eg: log('hello') |
+| Helper | [`ScriptHelper`](https://github.com/jaideepheer/MinecraftForge-custom_discordRPC/blob/5f9d87adc33e628df24a4a808ca45aa157231018/src/main/java/jdmcmods/custom_discordrpc/ScriptEngine/modScriptEngine.java#L157) | This is perhaps the most usefull variable. It is a custom wrapper object that provides various functions to get data from Minecraft during script execution. For eg. one of its functions is `Helper.getUserName()` which returns a `String`. <br>Eg: `log(Helper.getMCVERSION())` prints the Minecraft version to the log.<br><br> See the [`ScriptHelper`](https://github.com/jaideepheer/MinecraftForge-custom_discordRPC/blob/5f9d87adc33e628df24a4a808ca45aa157231018/src/main/java/jdmcmods/custom_discordrpc/ScriptEngine/modScriptEngine.java#L157) class's doccumentation to know more. |
+
+  </p></details>
+<br>
