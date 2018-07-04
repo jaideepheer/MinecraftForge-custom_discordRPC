@@ -171,6 +171,7 @@ If this property is not present in a profile then that profile will never be act
 | Big Image Hover Text | String | This is discord's large image text string. |
 | Small Image Key | String | This is discord's small image key string. |
 | Small Image Hover Text | String | This is discord's small image text string. |
+| Modification JavaScript | String | This is the javascript code that is executed before sending an update to Discord. It uses the Nashorn engine therefore you can use the 'load()' function to load custom js files which will allow you to change the js code without restarting the game. See below to know more. |
 | Join Secret | String | This is currently unused. |
 | Spectate Secret | String | This is currently unused. |
 
