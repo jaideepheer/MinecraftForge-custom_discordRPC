@@ -205,10 +205,9 @@ If this property is not present in a profile then that profile will never be act
 
   </p></details>
 <br>
-Since Discord allows the Rich Presence to be updated __only once in 15sec.__, this mod will execute your script once in about 15 seconds.
 
-For that matter, you may want to delay an update due to some reason like invalid/unavailable data. This can be accomplished by the `Helper.cancellUpdate()` function. This function prevents the current update from being sent thus allowing you to 'delay' an update till you think it is time. __Note__ that after the update is canceled, the RPC Thread still waits for 2 seconds before attempting another update(and executing your script) to prevent log spamming and save on CPU resources.
+* Since Discord allows the Rich Presence to be updated __only once in 15sec.__, this mod will execute your script once in about 15 seconds.For that matter, you may want to delay an update due to some reason like invalid/unavailable data. This can be accomplished by the `Helper.cancellUpdate()` function. This function prevents the current update from being sent thus allowing you to 'delay' an update till you think it is time. __Note__ that after the update is canceled, the RPC Thread still waits for 2 seconds before attempting another update(and executing your script) to prevent log spamming and save on CPU resources.
 
-There is also a utility function `Helper.cancellUpdateIfMatch(target, toMatch)` which takes two arguments and cancells the current update if the two match else returns the first argument. This can be used to check for null values.
+* There is also a utility function `Helper.cancellUpdateIfMatch(target, toMatch)` which takes two arguments and cancells the current update if the two match else returns the first argument. This can be used to check for null values.
 
-Finally, canceling an update causes an exception and therefore __stopps the script execution__ so you shouldn't expect any code to run after the cancell statement.
+* Finally, canceling an update causes an exception and therefore __stopps the script execution__ so you shouldn't expect any code to run after the cancell statement.
