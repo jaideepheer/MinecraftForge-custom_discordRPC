@@ -7,6 +7,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.ModMetadata;
 import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.network.FMLNetworkEvent;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,19 +29,19 @@ public class CDRPCmod {
 
     public static final String MOD_ID = "customdiscordrpc";
     public static final String MOD_NAME = "Custom Discord RPC";
-    public static final String VERSION = "2.0";
+    public static final String VERSION = "2.1";
     public static final String UPDATE_JSON = "https://raw.githubusercontent.com/jaideepheer/MinecraftForge-custom_discordRPC/master/src/main/resources/update.json";
 
     public static Logger LOGGER = LogManager.getLogger(MOD_ID);
 
     public static File CONFIG_DIR;
-    public static Path executionRoot;
+
+    private String firstDetectedScreen = null;
+    private boolean connectedToMultiplayer = false;
 
     // Ask forge to point this variable to the ModMetaData object of this mod.
     @Mod.Metadata(value = MOD_ID)
     public static ModMetadata metadata;
-
-    private final ModConfigManager configManager = new ModConfigManager();
 
     static {
         discordRPCHandler.startRPC();
@@ -82,7 +84,7 @@ public class CDRPCmod {
         metadata.modId = MOD_ID;
 
         MinecraftForge.EVENT_BUS.register(this);
-        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.PRE_INIT);
+        ModConfigManager.setLatestEvent(ModConfigManager.Event.PRE_INIT);
         CONFIG_DIR = event.getModConfigurationDirectory();
         ModConfigManager.init(CONFIG_DIR);
     }
@@ -92,7 +94,7 @@ public class CDRPCmod {
      */
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
-        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.INIT);
+        ModConfigManager.setLatestEvent(ModConfigManager.Event.INIT);
     }
 
     /**
@@ -100,45 +102,95 @@ public class CDRPCmod {
      */
     @Mod.EventHandler
     public void postinit(FMLPostInitializationEvent event) {
-        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.POST_INIT);
+        ModConfigManager.setLatestEvent(ModConfigManager.Event.POST_INIT);
     }
     
     @Mod.EventHandler
     public void serverAboutTostart(FMLServerAboutToStartEvent e)
     {
-        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_ABOUT_TO_START);
+        ModConfigManager.setLatestEvent(ModConfigManager.Event.SERVER_ABOUT_TO_START);
     }
     
     @Mod.EventHandler
     public void severStarting(FMLServerStartingEvent e)
     {
-        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_STARTING);
+        ModConfigManager.setLatestEvent(ModConfigManager.Event.SERVER_STARTING);
     }
 
     @Mod.EventHandler
     public void serverStopping(FMLServerStoppingEvent e)
     {
-        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_STOPPING);
+        ModConfigManager.setLatestEvent(ModConfigManager.Event.SERVER_STOPPING);
     }
 
     @Mod.EventHandler
     public void serverStopped(FMLServerStoppedEvent e)
     {
-        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_STOPPED);
+        ModConfigManager.setLatestEvent(ModConfigManager.Event.SERVER_STOPPED);
     }
 
     @Mod.EventHandler
     public void serverStarted(FMLServerStartedEvent e)
     {
-        ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.SERVER_STARTED);
+        ModConfigManager.setLatestEvent(ModConfigManager.Event.SERVER_STARTED);
     }
 
     @SubscribeEvent
     public void guiScreenDetect(GuiScreenEvent.InitGuiEvent.Pre e)
     {
-        if(e.getGui() instanceof GuiMainMenu)
+        String screenClass = e.getGui().getClass().getName();
+        ModConfigManager.ModConfig config = ModConfigManager.getModConfig();
+
+        // Check if we need to use custom class name to detect main menu screen
+        if(screenClass.equals(config.advancedConfig.mainMenuClassName))
         {
-            ModConfigManager.setLatestEvent(ModConfigManager.LatestEvent.MAIN_MENU_REACHED);
+            LOGGER.log(Level.INFO,"Custom main menu screen detected. ["+screenClass+"]");
+            ModConfigManager.setLatestEvent(ModConfigManager.Event.MAIN_MENU_REACHED);
+        }
+        // Check if we need to treat first screen as main menu screen
+        else if(config.advancedConfig.firstPostLoadScreenAsMainMenu)
+        {
+            if(firstDetectedScreen == null)
+            {
+                firstDetectedScreen = screenClass;
+                LOGGER.log(Level.INFO,"Treating first detected GUI screen as main menu screen. ["+firstDetectedScreen+"]");
+            }
+            if(screenClass.equals(firstDetectedScreen))
+            {
+                ModConfigManager.setLatestEvent(ModConfigManager.Event.MAIN_MENU_REACHED);
+            }
+        }
+        // else use vanilla detection
+        else if(e.getGui() instanceof GuiMainMenu)
+        {
+            ModConfigManager.setLatestEvent(ModConfigManager.Event.MAIN_MENU_REACHED);
+        }
+    }
+
+    @SubscribeEvent
+    public void connectedToServer(FMLNetworkEvent.ClientConnectedToServerEvent e)
+    {
+        if(!e.isLocal())
+        {
+            connectedToMultiplayer = true;
+            ModConfigManager.setLatestEvent(ModConfigManager.Event.CONNECTED_TO_MULTIPLAYER_SERVER);
+        }
+        else
+        {
+            ModConfigManager.setLatestEvent(ModConfigManager.Event.CONNECTED_TO_SINGLEPLAYER_SERVER);
+        }
+    }
+
+    @SubscribeEvent
+    public void disconnectedFromServer(FMLNetworkEvent.ClientDisconnectionFromServerEvent e)
+    {
+        if(connectedToMultiplayer){
+            connectedToMultiplayer = false;
+            ModConfigManager.setLatestEvent(ModConfigManager.Event.DISCONNECTED_FROM_MULTIPLAYER_SERVER);
+        }
+        else
+        {
+            ModConfigManager.setLatestEvent(ModConfigManager.Event.DISCONNECTED_FROM_SINGLEPLAYER_SERVER);
         }
     }
 }

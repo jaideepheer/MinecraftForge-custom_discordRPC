@@ -4,6 +4,7 @@ import jdmcmods.custom_discordrpc.CDRPCmod;
 import jdmcmods.custom_discordrpc.ModConfigManager;
 import net.arikia.dev.drpc.DiscordRichPresence;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraft.world.storage.WorldInfo;
@@ -36,10 +37,11 @@ public class modScriptEngine {
 
     public static void resetEngine()
     {
-        Bindings b = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+        Bindings b = engine.createBindings();
         b.remove("exit");
         b.remove("quit");
-        engine.put("Helper", new ScriptHelper());
+        b.put("Helper", new ScriptHelper());
+        engine.setBindings(b,ScriptContext.ENGINE_SCOPE);
     }
 
     private static ScriptEngine makeScriptEngine()
@@ -138,10 +140,11 @@ public class modScriptEngine {
                         nashornUsedClasses.put(c.getName(),c);
                     }
                 }
-
+                LOGGER.log(Level.INFO,"Successfully retrieved NashornScriptEngineFactory object.");
                 return f;
             }
         }
+        LOGGER.log(Level.INFO,"Couldn't get NashornScriptEngineFactory object.");
         return null;
     }
 
@@ -168,6 +171,12 @@ public class modScriptEngine {
             return ModConfigManager.latestEvent.toString();
         }
         public void cancellUpdate()throws CancellScriptUpdateException{throw new CancellScriptUpdateException("Script update cancelled");}
+        public Object cancellUpdateIfMatch(Object o, Object toMatch) throws CancellScriptUpdateException {
+            if((o == toMatch)||(o!=null && o.equals(toMatch))){
+                cancellUpdate();
+            }
+            return o;
+        }
 
         //======================
         // Game Related Helpers
@@ -183,12 +192,21 @@ public class modScriptEngine {
         {
             return MinecraftForge.MC_VERSION;
         }
-        public Object cancellUpdateIfMatch(Object o, Object toMatch) throws CancellScriptUpdateException {
-            if((o == toMatch)||(o!=null && o.equals(toMatch))){
-                cancellUpdate();
-            }
-            return o;
-        }
+        public boolean isSinglePlayer(){return getMinecraft().isSingleplayer();}
+        public boolean inGameHasFocus(){return getMinecraft().inGameHasFocus;}
+        public boolean isGamePaused(){return getMinecraft().isGamePaused();}
+
+        //========================
+        // Server Related Helpers
+        //========================
+        public ServerData getServerData(){return getMinecraft().getCurrentServerData();}
+        public String getServerName(){ServerData s = getServerData();if(s==null)return null; else return s.serverName;}
+        public String getServerIP(){ServerData s = getServerData();if(s==null)return null; else return s.serverIP;}
+        public String getServerMOTD(){ServerData s = getServerData();if(s==null)return null; else return s.serverMOTD;}
+        public String getServerGameVersion(){ServerData s = getServerData();if(s==null)return null; else return s.gameVersion;}
+        public boolean getServerIsOnLAN(){ServerData s = getServerData();if(s==null)return false; else return s.isOnLAN();}
+        public long getServerPing(){ServerData s = getServerData();if(s==null)return -1; else return s.pingToServer;}
+        public String getServerPopulationInfo(){ServerData s = getServerData();if(s==null)return null; else return s.populationInfo;}
 
         //=======================
         // World Related Helpers

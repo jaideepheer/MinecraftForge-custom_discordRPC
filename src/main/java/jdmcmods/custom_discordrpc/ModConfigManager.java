@@ -9,6 +9,7 @@ import net.arikia.dev.drpc.DiscordRichPresence;
 import org.apache.logging.log4j.Level;
 
 import java.io.*;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -20,15 +21,19 @@ public class ModConfigManager
     private static Gson gson;
     private static ModConfig config = new ModConfig();
 
-    public static LatestEvent latestEvent;
+    // This stores the latest event that has occoured
+    public static Event latestEvent;
+    // This stores the latest event that activates at least one profile.
+    public static Event validEvent;
+    public static EnumSet<Event> validEventsSet = EnumSet.noneOf(Event.class);
 
     static {
-        latestEvent = LatestEvent.JUST_STARTED;
+        latestEvent = Event.JUST_STARTED;
         gson = new GsonBuilder().setPrettyPrinting().create();
         setDefaults();
     }
 
-    public enum LatestEvent{
+    public enum Event {
         JUST_STARTED,
         PRE_INIT,
         INIT,
@@ -38,7 +43,11 @@ public class ModConfigManager
         SERVER_STOPPING,
         SERVER_STOPPED,
         SERVER_STARTED,
-        MAIN_MENU_REACHED
+        MAIN_MENU_REACHED,
+        CONNECTED_TO_SINGLEPLAYER_SERVER,
+        DISCONNECTED_FROM_SINGLEPLAYER_SERVER,
+        CONNECTED_TO_MULTIPLAYER_SERVER,
+        DISCONNECTED_FROM_MULTIPLAYER_SERVER
     }
 
     static class ModConfig
@@ -48,12 +57,30 @@ public class ModConfigManager
         // Map<profileName,RichTextProfile>
         @SerializedName("Rich Presence Profiles")
         public Map<String,RichTextProfile> RTProfileList = new LinkedHashMap<>();
+
+        @SerializedName("Advanced Config")
+        public AdvancedConfig advancedConfig = new AdvancedConfig();
+    }
+
+    public static class AdvancedConfig
+    {
+        @SerializedName("Treat First Post-Load Screen As Main-Menu")
+        boolean firstPostLoadScreenAsMainMenu = true;
+
+        @SerializedName("Main Menu Full ClassName")
+        String mainMenuClassName = null;
+
+        @SerializedName("Discord Update Interval")
+        long discordMinUpdateinterval = 15L;
+
+        @SerializedName("Script Update Interval Millis")
+        long scriptMinUpdateIntervalMillis = 2000L;
     }
 
     public static class RichTextProfile
     {
         @SerializedName("Activation Event")
-        LatestEvent activationEvent;
+        Event activationEvent;
         @SerializedName("Game State")
         String gameState = null;
         @SerializedName("Details")
@@ -165,14 +192,14 @@ public class ModConfigManager
             return this;
         }
 
-        public RichTextProfile setActivationEvent(LatestEvent activationEvent) {
+        public RichTextProfile setActivationEvent(Event activationEvent) {
             this.activationEvent = activationEvent;
             return this;
         }
 
         public boolean shouldActivate()
         {
-            return activationEvent == latestEvent;
+            return activationEvent == validEvent;
         }
 
         /**
@@ -259,14 +286,23 @@ public class ModConfigManager
         }
     }
 
-    public static void setLatestEvent(LatestEvent latestEvent) {
-        ModConfigManager.latestEvent = latestEvent;
-        LOGGER.log(Level.INFO,"Latest event: "+latestEvent);
+    public static void setLatestEvent(Event event) {
+        ModConfigManager.latestEvent = event;
+        LOGGER.log(Level.INFO,"Latest event: "+ event);
+
+        if(validEventsSet.contains(event))
+        {
+            validEvent = latestEvent;
+            LOGGER.log(Level.INFO,"Valid Event changed to: "+validEvent+".");
+        }
+        else {
+            LOGGER.log(Level.DEBUG,"Latest Event activates no profiles, hence Valid Event["+validEvent+"] remains unchanged.");
+        }
     }
 
     private static void loadConfig()
     {
-        // Set all to null
+        // Read config
         try {
             BufferedReader reader = new BufferedReader(new FileReader(configFile));
             config = gson.fromJson(reader,ModConfig.class);
@@ -285,6 +321,23 @@ public class ModConfigManager
             LOGGER.log(Level.ERROR,"Config file has invalid JSON syntax ["+configFile.getAbsolutePath()+"]");
         }
         LOGGER.log(Level.INFO,"Config loaded.");
+
+        refreshValidEvents();
+    }
+
+    private static void refreshValidEvents()
+    {
+        // Reset validEventsSet
+        validEventsSet = EnumSet.noneOf(Event.class);
+
+        // Detect valid events, i.e. events used for profile activation
+        for(RichTextProfile e: config.RTProfileList.values())
+        {
+            validEventsSet.add(e.activationEvent);
+        }
+
+        LOGGER.log(Level.INFO,"Valid events refreshed.");
+        LOGGER.log(Level.INFO,"These are the events that activate profiles: "+validEventsSet);
     }
 
     private static void saveConfig()
@@ -305,7 +358,7 @@ public class ModConfigManager
         // Set defaults
         config.discordAppID = "462280508068331522";
         config.RTProfileList.put("default",new RichTextProfile()
-                .setActivationEvent(LatestEvent.JUST_STARTED)
+                .setActivationEvent(Event.JUST_STARTED)
                 .setGameState("Just Started")
                 .setDetails("Waiting for Mod to init.")
                 .setStartTimedealy(0)
@@ -315,7 +368,7 @@ public class ModConfigManager
                                 +"RichPresence.state += ' Minecraft v'+Helper.cancellUpdateIfMatch(Helper.getMCVERSION(),null);")
         );
         config.RTProfileList.put("preInit",new RichTextProfile()
-                .setActivationEvent(LatestEvent.PRE_INIT)
+                .setActivationEvent(Event.PRE_INIT)
                 .setGameState("Pre-Init.")
                 .setDetails("Forge Loading in pre-init.")
                 .setStartTimedealy(0)
@@ -324,7 +377,7 @@ public class ModConfigManager
                 .setModifyScript("RichPresence.smallImageText = Helper.cancellUpdateIfMatch(Helper.getUserName(),null);")
         );
         config.RTProfileList.put("init",new RichTextProfile()
-                .setActivationEvent(LatestEvent.INIT)
+                .setActivationEvent(Event.INIT)
                 .setGameState("Init.")
                 .setDetails("Forge Loading in init.")
                 .setStartTimedealy(0)
@@ -333,7 +386,7 @@ public class ModConfigManager
                 .setModifyScript("RichPresence.smallImageText = Helper.cancellUpdateIfMatch(Helper.getUserName(),null);")
         );
         config.RTProfileList.put("postInit",new RichTextProfile()
-                .setActivationEvent(LatestEvent.POST_INIT)
+                .setActivationEvent(Event.POST_INIT)
                 .setGameState("Post-Init.")
                 .setDetails("Forge Loading in post-init.")
                 .setStartTimedealy(0)
@@ -342,7 +395,7 @@ public class ModConfigManager
                 .setModifyScript("RichPresence.smallImageText = Helper.cancellUpdateIfMatch(Helper.getUserName(),null);")
         );
         config.RTProfileList.put("mainMenu",new RichTextProfile()
-                .setActivationEvent(LatestEvent.MAIN_MENU_REACHED)
+                .setActivationEvent(Event.MAIN_MENU_REACHED)
                 .setGameState("In main menu.")
                 .setDetails("Idle")
                 .setStartTimedealy(0)
@@ -352,7 +405,7 @@ public class ModConfigManager
                                 +"RichPresence.details = ''+Helper.cancellUpdateIfMatch(Helper.getUserName(),null)+' has nothing to do.';")
         );
         config.RTProfileList.put("serverAboutToStart",new RichTextProfile()
-                .setActivationEvent(LatestEvent.SERVER_ABOUT_TO_START)
+                .setActivationEvent(Event.SERVER_ABOUT_TO_START)
                 .setGameState("Loading Screen")
                 .setDetails("Loading Single Player Server")
                 .setStartTimedealy(0)
@@ -361,8 +414,8 @@ public class ModConfigManager
                 .setModifyScript("RichPresence.smallImageText = Helper.cancellUpdateIfMatch(Helper.getUserName(),null);" +
                         "RichPresence.details = 'Loading World \\''+Helper.cancellUpdateIfMatch(Helper.getWorldName(),null)+'\\'';")
         );
-        config.RTProfileList.put("serverStarted",new RichTextProfile()
-                .setActivationEvent(LatestEvent.SERVER_STARTED)
+        config.RTProfileList.put("serverStarted", new RichTextProfile()
+                .setActivationEvent(Event.SERVER_STARTED)
                 .setGameState("In-game")
                 .setDetails("Playing Single Player")
                 .setStartTimedealy(0)
@@ -372,6 +425,33 @@ public class ModConfigManager
                         "RichPresence.details = 'In the \\''+Helper.cancellUpdateIfMatch(Helper.getDimensionName(),null)+'\\'';" +
                         "RichPresence.state += '('+Helper.cancellUpdateIfMatch(Helper.getWorldName(),null)+')'")
         );
+        config.RTProfileList.put("connectedToMultiplayerServer", new RichTextProfile()
+                .setActivationEvent(Event.CONNECTED_TO_MULTIPLAYER_SERVER)
+                .setGameState("Online")
+                .setDetails("Playing MultiPlayer")
+                .setStartTimedealy(0)
+                .setBigImage("connectedtomultiplayerserverbig","Currently causing havoc ;)")
+                .setSmallImage("connectedtomultiplayerserversmall","in-game")
+                .setModifyScript("RichPresence.smallImageText = Helper.cancellUpdateIfMatch(Helper.getUserName(),null);" +
+                        "RichPresence.details = 'In the \\''+Helper.cancellUpdateIfMatch(Helper.getDimensionName(),null)+'\\'';" +
+                        "RichPresence.state += ' @'+Helper.cancellUpdateIfMatch(Helper.getServerIP(),null)")
+        );
+        config.RTProfileList.put("disconnectedFromMultiplayerServer", new RichTextProfile()
+                .setActivationEvent(Event.DISCONNECTED_FROM_MULTIPLAYER_SERVER)
+                .setGameState("MultiplayerGUI")
+                .setDetails("Was just playing MultiPlayer")
+                .setStartTimedealy(0)
+                .setBigImage("disconnectedfrommultiplayerserverbig","Currently causing havoc ;)")
+                .setSmallImage("disconnectedfrommultiplayerserversmall","in-game")
+                .setModifyScript("RichPresence.smallImageText = Helper.cancellUpdateIfMatch(Helper.getUserName(),null);")
+        );
+
+        // Advanced config
+        config.advancedConfig.firstPostLoadScreenAsMainMenu = true;
+        config.advancedConfig.mainMenuClassName = null;
+
         LOGGER.log(Level.INFO,"Config defaults set.");
+
+        refreshValidEvents();
     }
 }

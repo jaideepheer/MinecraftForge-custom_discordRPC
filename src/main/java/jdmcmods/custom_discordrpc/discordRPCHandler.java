@@ -56,10 +56,10 @@ public class discordRPCHandler {
     {
         RPCWatchdogThread = new Thread(()->{
             // set discord min update interval
-            long discordMinUpdateIntervalSec = 15;
-            long scriptMinUpdateIntervalMilli = 2000;
-            long delay;
             ModConfigManager.ModConfig config = ModConfigManager.getModConfig();
+            long discordMinUpdateIntervalSec = config.advancedConfig.discordMinUpdateinterval;
+            long scriptMinUpdateIntervalMilli = config.advancedConfig.scriptMinUpdateIntervalMillis;
+            long delay;
             ModConfigManager.RichTextProfile textProfile = null;
             String prevProfileName = null;
             boolean profileChanged = true;
@@ -126,7 +126,7 @@ public class discordRPCHandler {
                             {
                                 LOGGER.log(Level.INFO, "Script cancelled RPC update."
                                         +"[Profile: "+prevProfileName+"]"
-                                        +"[LatestEvent: "+ModConfigManager.latestEvent+"]");
+                                        +"[Event: "+ModConfigManager.latestEvent+"]");
                                 isUpdateCancelled = true;
                             }
                             else {
