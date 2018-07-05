@@ -70,11 +70,8 @@ public class ModConfigManager
         @SerializedName("Main Menu Full ClassName")
         String mainMenuClassName = null;
 
-        @SerializedName("Discord Update Interval")
-        long discordMinUpdateinterval = 15L;
-
-        @SerializedName("Script Update Interval Millis")
-        long scriptMinUpdateIntervalMillis = 2000L;
+        @SerializedName("Update Interval Millis")
+        long updateintervalMillis = 2000L;
     }
 
     public static class RichTextProfile
@@ -247,6 +244,63 @@ public class ModConfigManager
                 richPresence.largeImageText = bigImageHover;
             }
             return richPresence;
+        }
+
+        /**
+         * Validates the RichPresence data to make sure there isn't anything invalid in there.
+         */
+        public static boolean validateRichPresence(DiscordRichPresence presence){
+            if(presence.largeImageKey != null && presence.largeImageKey.length()>32)
+            {
+                presence.largeImageKey = presence.largeImageKey.substring(0,32);
+                LOGGER.log(Level.ERROR,"WARNING! \"Big Image Key\" was more that 32 chars. It is trimmed to: "+presence.largeImageKey);
+            }
+            if(presence.smallImageKey != null && presence.smallImageKey.length()>32)
+            {
+                presence.smallImageKey = presence.smallImageKey.substring(0,32);
+                LOGGER.log(Level.ERROR,"WARNING! \"Small Image Key\" was more that 32 chars. It is trimmed to:  "+presence.smallImageKey);
+            }
+            if(presence.largeImageText != null && presence.largeImageText.length()>128)
+            {
+                presence.largeImageText = presence.largeImageText.substring(0,128);
+                LOGGER.log(Level.ERROR,"WARNING! \"Big Image Hover Text\" was more that 128 chars. It is trimmed to fit 128 chars.");
+            }
+            if(presence.smallImageText != null && presence.smallImageText.length()>128)
+            {
+                presence.smallImageText = presence.smallImageText.substring(0,128);
+                LOGGER.log(Level.ERROR,"WARNING! \"Small Image Hover Text\" was more that 128 chars. It is trimmed to fit 128 chars.");
+            }
+            if(presence.partyId != null && presence.partyId.length()>128)
+            {
+                presence.partyId = presence.partyId.substring(0,128);
+                LOGGER.log(Level.ERROR,"WARNING! \"Party ID\" was more that 128 chars. It is trimmed to fit 128 chars.");
+            }
+            if(presence.state != null && presence.state.length()>128)
+            {
+                presence.state = presence.state.substring(0,128);
+                LOGGER.log(Level.ERROR,"WARNING! \"Game State\" was more that 128 chars. It is trimmed to fit 128 chars.");
+            }
+            if(presence.details != null && presence.details.length()>128)
+            {
+                presence.details = presence.details.substring(0,128);
+                LOGGER.log(Level.ERROR,"WARNING! \"Details\" was more that 128 chars. It is trimmed to fit 128 chars.");
+            }
+            if(presence.joinSecret != null && presence.joinSecret.length()>128)
+            {
+                presence.joinSecret = presence.joinSecret.substring(0,128);
+                LOGGER.log(Level.ERROR,"WARNING! \"Details\" was more that 128 chars. It is trimmed to fit 128 chars.");
+            }
+            if(presence.spectateSecret != null && presence.spectateSecret.length()>128)
+            {
+                presence.spectateSecret = presence.spectateSecret.substring(0,32);
+                LOGGER.log(Level.ERROR,"WARNING! \"Details\" was more that 128 chars. It is trimmed to fit 128 chars.");
+            }
+            if(presence.matchSecret != null)
+            {
+                presence.matchSecret = null;
+                LOGGER.log(Level.WARN,"WARNING! \'matchSecret\' was not null. It is set to null as it is deprecated.");
+            }
+            return true;
         }
     }
 
@@ -430,25 +484,28 @@ public class ModConfigManager
                 .setGameState("Online")
                 .setDetails("Playing MultiPlayer")
                 .setStartTimedealy(0)
-                .setBigImage("connectedtomultiplayerserverbig","Currently causing havoc ;)")
-                .setSmallImage("connectedtomultiplayerserversmall","in-game")
+                .setBigImage("connectedmultiplayerbig","Currently causing havoc ;)")
+                .setSmallImage("connectedmultiplayersmall","in-game")
                 .setModifyScript("RichPresence.smallImageText = Helper.cancellUpdateIfMatch(Helper.getUserName(),null);" +
                         "RichPresence.details = 'In the \\''+Helper.cancellUpdateIfMatch(Helper.getDimensionName(),null)+'\\'';" +
-                        "RichPresence.state += ' @'+Helper.cancellUpdateIfMatch(Helper.getServerIP(),null)")
+                        "var serverName = Helper.cancellUpdateIfMatch(Helper.getServerIP(),null);" +
+                        "RichPresence.state += ' @'+serverName;")
         );
         config.RTProfileList.put("disconnectedFromMultiplayerServer", new RichTextProfile()
                 .setActivationEvent(Event.DISCONNECTED_FROM_MULTIPLAYER_SERVER)
-                .setGameState("MultiplayerGUI")
-                .setDetails("Was just playing MultiPlayer")
+                .setGameState("Multiplayer Servers List")
+                .setDetails("Was online")
                 .setStartTimedealy(0)
-                .setBigImage("disconnectedfrommultiplayerserverbig","Currently causing havoc ;)")
-                .setSmallImage("disconnectedfrommultiplayerserversmall","in-game")
-                .setModifyScript("RichPresence.smallImageText = Helper.cancellUpdateIfMatch(Helper.getUserName(),null);")
+                .setBigImage("disconnectedmultiplayerbig","Currently causing havoc ;)")
+                .setSmallImage("disconnectedmultiplayersmall","in-game")
+                .setModifyScript("RichPresence.smallImageText = Helper.cancellUpdateIfMatch(Helper.getUserName(),null);" +
+                        "if(serverName!=undefined) RichPresence.details += ' @'+serverName;")
         );
 
         // Advanced config
         config.advancedConfig.firstPostLoadScreenAsMainMenu = true;
         config.advancedConfig.mainMenuClassName = null;
+        config.advancedConfig.updateintervalMillis = 2000L;
 
         LOGGER.log(Level.INFO,"Config defaults set.");
 

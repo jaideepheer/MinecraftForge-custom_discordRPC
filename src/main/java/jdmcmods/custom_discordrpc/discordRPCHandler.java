@@ -18,6 +18,7 @@ import static jdmcmods.custom_discordrpc.CDRPCmod.LOGGER;
 public class discordRPCHandler {
     private static DiscordEventHandlers eventHandlers = discordEventHandlers.getEventHandlers();
     private static long lastRPCUpdateTime=-1L;
+    private static boolean sendUpdateNowMarker = false;
     private static Thread RPCWatchdogThread = null;
     private static final Object ThreadSyncLock = new Object();
 
@@ -52,13 +53,25 @@ public class discordRPCHandler {
         }
     }
 
+    public static void sendUpdateNOW()
+    {
+        if(!isRPCRunning.get())return;
+        sendUpdateNowMarker = true;
+        if(RPCWatchdogThread.isAlive())
+        {
+            RPCWatchdogThread.interrupt();
+        }
+        else {
+            LOGGER.log(Level.ERROR,"RPCWatchdogThread isn't alive, can't sendUpdateNOW(). :P");
+        }
+    }
+
     private static void launchRPCWatchdogThread()
     {
         RPCWatchdogThread = new Thread(()->{
             // set discord min update interval
             ModConfigManager.ModConfig config = ModConfigManager.getModConfig();
-            long discordMinUpdateIntervalSec = config.advancedConfig.discordMinUpdateinterval;
-            long scriptMinUpdateIntervalMilli = config.advancedConfig.scriptMinUpdateIntervalMillis;
+            long updateIntervalMilli = config.advancedConfig.updateintervalMillis;
             long delay;
             ModConfigManager.RichTextProfile textProfile = null;
             String prevProfileName = null;
@@ -69,26 +82,26 @@ public class discordRPCHandler {
             // run while isRPCRunning is true
             while(isRunning.get()) {
 
-                // calculate delay
+                // calculate time elapsed since last update
                 delay = System.currentTimeMillis()-lastRPCUpdateTime;
-                delay = discordMinUpdateIntervalSec*1000 - delay;
+                // calculate time to wait
+                delay = updateIntervalMilli - delay;
 
-                // set min. delay and reset isUpdateCancelled
-                delay = scriptMinUpdateIntervalMilli>delay?scriptMinUpdateIntervalMilli:delay;
+                // reset isUpdateCancelled
                 isUpdateCancelled = false;
 
-                // wait 15 sec. before update
-                try {
-                    Thread.sleep(delay>0?delay:0);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    LOGGER.log(Level.ERROR,"RPCWatchdogThread interrupted... This shouldn't happen.");
+                // wait update interval before update
+                if(!sendUpdateNowMarker && delay>0) {
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        LOGGER.log(Level.ERROR, "Zzz...Puff! What!? RPCWatchdogThread interrupted... Somebody wants me to send update NOW.");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        LOGGER.log(Level.ERROR, "RPCWatchdogThread had an exception while sleeping...! wtf!? This shouldn't happen.");
+                    }
                 }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                    LOGGER.log(Level.ERROR,"RPCWatchdogThread had an exception... This shouldn't happen.");
-                }
+                sendUpdateNowMarker = false;
 
                 // Select the profile to use
                 for(Map.Entry<String,ModConfigManager.RichTextProfile> entry:config.RTProfileList.entrySet())
@@ -126,7 +139,8 @@ public class discordRPCHandler {
                             {
                                 LOGGER.log(Level.INFO, "Script cancelled RPC update."
                                         +"[Profile: "+prevProfileName+"]"
-                                        +"[Event: "+ModConfigManager.latestEvent+"]");
+                                        +"[ValidEvent: "+ModConfigManager.validEvent+"]"
+                                        +"[LatestEvent: "+ModConfigManager.latestEvent+"]");
                                 isUpdateCancelled = true;
                             }
                             else {
@@ -138,21 +152,28 @@ public class discordRPCHandler {
                         LOGGER.log(Level.DEBUG, "Script execution for profile '"+prevProfileName+"' took: " + (System.currentTimeMillis() - timestamp) + "ms.");
                     }
                     if(!isUpdateCancelled) {
-                        // Update Rich presence
-                        synchronized (ThreadSyncLock) {
-                            if (isRunning.get()) DiscordRPC.discordUpdatePresence(presence);
+                        // Validate Rich Presence Data
+                        if(ModConfigManager.RichTextProfile.validateRichPresence(presence)) {
+                            // Update Rich presence
+                            synchronized (ThreadSyncLock) {
+                                if (isRunning.get()) DiscordRPC.discordUpdatePresence(presence);
+                            }
+                            LOGGER.log(Level.DEBUG, "RPCWatchdogThread: RPC updated.[LatestEvent: " + ModConfigManager.latestEvent + "]"
+                                    + "[ValidEvent: " + ModConfigManager.validEvent + "]"
+                                    + "[Profile: " + prevProfileName + "]"
+                                    + "(+" + (System.currentTimeMillis() - lastRPCUpdateTime) + " sec.)"
+                            );
+                            lastRPCUpdateTime = System.currentTimeMillis();
                         }
-                        LOGGER.log(Level.DEBUG, "RPCWatchdogThread: RPC updated.[Event: " + ModConfigManager.latestEvent + "]"
-                                + "[Profile: " + prevProfileName + "]"
-                                + "(+" + (System.currentTimeMillis() - lastRPCUpdateTime) + " sec.)"
-                        );
-                        lastRPCUpdateTime = System.currentTimeMillis();
+                        else {
+                            LOGGER.log(Level.ERROR,"RichPresence was invalid, can't send update to Discord.");
+                        }
                     }
                     profileChanged = false;
                 }
 
             }
-        },"DiscordRPCWatchdogThread["+ModConfigManager.getModConfig().discordAppID+"]");
+        },"DiscordRPCWatchdogThread[APPID: "+ModConfigManager.getModConfig().discordAppID+"]");
         RPCWatchdogThread.setDaemon(true);
         RPCWatchdogThread.start();
     }

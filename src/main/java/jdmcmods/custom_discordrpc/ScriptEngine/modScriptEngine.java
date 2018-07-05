@@ -215,9 +215,9 @@ public class modScriptEngine {
         {
             return getMinecraft().world;
         }
-        public String getWorldName(){try{return getMinecraft().getIntegratedServer().getWorldName();}catch (Exception e){e.printStackTrace();return null;}}
+        public String getWorldName(){try{return getMinecraft().getIntegratedServer().getWorldName();}catch (Exception e){return null;}}
         public WorldInfo getWorldInfo() {
-            try{return getWorld().getWorldInfo();}catch (Exception e){e.printStackTrace();return null;}
+            try{return getWorld().getWorldInfo();}catch (Exception e){return null;}
         }
         public File getWorldDirectory(){
             return DimensionManager.getCurrentSaveRootDirectory();
@@ -233,7 +233,7 @@ public class modScriptEngine {
         // Dimension Related Helpers
         //===========================
         public String getDimensionName(){
-            try{return getWorldProvider().getDimensionType().getName();}catch (Exception e){e.printStackTrace();return null;}
+            try{return getWorldProvider().getDimensionType().getName();}catch (Exception e){return null;}
         }
         public int getDimensionID(){
             return getWorldProvider().getDimension();

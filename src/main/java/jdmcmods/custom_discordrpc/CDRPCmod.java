@@ -13,7 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.nio.file.*;
 
 @Mod(
         modid = CDRPCmod.MOD_ID,
@@ -29,7 +28,7 @@ public class CDRPCmod {
 
     public static final String MOD_ID = "customdiscordrpc";
     public static final String MOD_NAME = "Custom Discord RPC";
-    public static final String VERSION = "2.1";
+    public static final String VERSION = "2.2";
     public static final String UPDATE_JSON = "https://raw.githubusercontent.com/jaideepheer/MinecraftForge-custom_discordRPC/master/src/main/resources/update.json";
 
     public static Logger LOGGER = LogManager.getLogger(MOD_ID);
@@ -76,7 +75,8 @@ public class CDRPCmod {
         // Init. metadata
         metadata = event.getModMetadata();
         // Set the metadata
-        metadata.authorList.add(0,"Jaideep Singh Heer");
+        if(!metadata.authorList.contains("Jaideep Singh Heer"))
+            metadata.authorList.add(0,"Jaideep Singh Heer");
         metadata.version = VERSION;
         metadata.description = "This mod allows you to use custom Rich Presence Text for the Discord client.";
         metadata.updateJSON = UPDATE_JSON;
