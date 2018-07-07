@@ -258,5 +258,5 @@ It provides the following settings:-
 | Key | DataType | Description |
 |-----|----------|-------------|
 | Treat First Post-Load Screen As Main-Menu | boolean | If set to `true` this will use the first `GuiScreenEvent` to get the `GuiScreen` used for Main Menu detection.<br>Set this to `true` if the mod cannot detect the Main Menu screen due to conflicts with other mods like 'Custom Main Menu' etc. |
-| Main Menu Full ClassName | String | If this property is present the mod uses its value to detect the Main Menu. The class name of each `GuiScreen` encountered in `GuiScreenEvent` is matched with this property's value to detec the Main Menu.<br>Use this if `Treat First Post-Load Screen As Main-Menu` setting doesn't cut it for you. |
+| Main Menu Full ClassName | String | It is __recommended__ to use this setting instead of `Treat First Post-Load Screen As Main-Menu`.<br><br>If this property is present the mod uses its value to detect the Main Menu. The class name of each `GuiScreen` encountered in `GuiScreenEvent` is matched with this property's value to detect the Main Menu.<br><br>__Hint:__ For the '__Custom Main Menu__' mod use value '__lumien.custommainmenu.gui.GuiCustom__'. |
 | Update Interval Millis | Integer | This is the time period of the updates sent to discord in milli-seconds. Your update script is executed in every update. |
