@@ -28,7 +28,7 @@ public class CDRPCmod {
 
     public static final String MOD_ID = "customdiscordrpc";
     public static final String MOD_NAME = "Custom Discord RPC";
-    public static final String VERSION = "2.2";
+    public static final String VERSION = "2.21";
     public static final String UPDATE_JSON = "https://raw.githubusercontent.com/jaideepheer/MinecraftForge-custom_discordRPC/master/src/main/resources/update.json";
 
     public static Logger LOGGER = LogManager.getLogger(MOD_ID);

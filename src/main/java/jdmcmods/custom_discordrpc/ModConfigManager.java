@@ -28,9 +28,9 @@ public class ModConfigManager
     public static EnumSet<Event> validEventsSet = EnumSet.noneOf(Event.class);
 
     static {
-        latestEvent = Event.JUST_STARTED;
         gson = new GsonBuilder().setPrettyPrinting().create();
         setDefaults();
+        ModConfigManager.setLatestEvent(Event.JUST_STARTED);
     }
 
     public enum Event {
@@ -416,7 +416,7 @@ public class ModConfigManager
                 .setGameState("Just Started")
                 .setDetails("Waiting for Mod to init.")
                 .setStartTimedealy(0)
-                .setBigImage("juststrtedbig","Starting up")
+                .setBigImage("juststartedbig","Starting up")
                 .setSmallImage("juststartedsmall","Hi")
                 .setModifyScript("RichPresence.smallImageText = Helper.getUserName();"
                                 +"RichPresence.state += ' Minecraft v'+Helper.cancellUpdateIfMatch(Helper.getMCVERSION(),null);")

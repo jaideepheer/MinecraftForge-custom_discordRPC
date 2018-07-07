@@ -173,6 +173,7 @@ public class discordRPCHandler {
                 }
 
             }
+            LOGGER.log(Level.INFO,Thread.currentThread().getName()+" has stopped.");
         },"DiscordRPCWatchdogThread[APPID: "+ModConfigManager.getModConfig().discordAppID+"]");
         RPCWatchdogThread.setDaemon(true);
         RPCWatchdogThread.start();
@@ -181,9 +182,10 @@ public class discordRPCHandler {
     public static void stopRPC()
     {
         if(isRPCRunning.getAndSet(false)) {
+            LOGGER.log(Level.INFO, "Stopping RPC Watchdog Thread...");
             MinecraftForge.EVENT_BUS.unregister(discordCallbackExecutor);
-            synchronized (ThreadSyncLock)
-            {
+            synchronized (ThreadSyncLock) {
+                DiscordRPC.discordClearPresence();
                 DiscordRPC.discordShutdown();
             }
             isRPCRunning = new AtomicBoolean(false);
@@ -194,6 +196,5 @@ public class discordRPCHandler {
     protected void finalize() throws Throwable {
         super.finalize();
         stopRPC();
-        DiscordRPC.discordShutdown();
     }
 }
