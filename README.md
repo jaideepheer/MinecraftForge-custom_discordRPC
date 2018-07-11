@@ -147,7 +147,7 @@ This allows you to use a custom Discord App so that you can use custom images or
       "Small Image Key": "juststartedsmall",
       "Small Image Hover Text": "Hi"
     }
-  }
+  },
   "Advanced Config": {
     "Treat First Post-Load Screen As Main-Menu": true,
     "Discord Update Interval": 15,
