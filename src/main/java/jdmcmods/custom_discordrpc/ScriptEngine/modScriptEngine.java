@@ -204,7 +204,7 @@ public class modScriptEngine {
         public String getServerIP(){ServerData s = getServerData();if(s==null)return null; else return s.serverIP;}
         public String getServerMOTD(){ServerData s = getServerData();if(s==null)return null; else return s.serverMOTD;}
         public String getServerGameVersion(){ServerData s = getServerData();if(s==null)return null; else return s.gameVersion;}
-        public boolean getServerIsOnLAN(){ServerData s = getServerData();if(s==null)return false; else return s.isOnLAN();}
+        public boolean getServerIsOnLAN(){ServerData s = getServerData();if(s==null)return false; else return s.field_78841_f;}
         public long getServerPing(){ServerData s = getServerData();if(s==null)return -1; else return s.pingToServer;}
         public String getServerPopulationInfo(){ServerData s = getServerData();if(s==null)return null; else return s.populationInfo;}
 
@@ -213,7 +213,7 @@ public class modScriptEngine {
         //=======================
         public World getWorld()
         {
-            return getMinecraft().world;
+            return getMinecraft().theWorld;
         }
         public String getWorldName(){try{return getMinecraft().getIntegratedServer().getWorldName();}catch (Exception e){return null;}}
         public WorldInfo getWorldInfo() {
@@ -233,10 +233,10 @@ public class modScriptEngine {
         // Dimension Related Helpers
         //===========================
         public String getDimensionName(){
-            try{return getWorldProvider().getDimensionType().getName();}catch (Exception e){return null;}
+            try{return getWorldProvider().getDimensionName();}catch (Exception e){return null;}
         }
         public int getDimensionID(){
-            return getWorldProvider().getDimension();
+            return getWorldProvider().getDimensionId();
         }
 
         //======================

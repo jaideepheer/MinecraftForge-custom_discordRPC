@@ -19,7 +19,7 @@ import java.io.File;
         name = CDRPCmod.MOD_NAME,
         version = CDRPCmod.VERSION,
         canBeDeactivated = true,
-        acceptedMinecraftVersions = "[1.11,)",
+        acceptedMinecraftVersions = "[1.8,1.8.9]",
         dependencies = "before:*;",
         updateJSON = CDRPCmod.UPDATE_JSON,
         clientSideOnly = true
@@ -28,7 +28,7 @@ public class CDRPCmod {
 
     public static final String MOD_ID = "customdiscordrpc";
     public static final String MOD_NAME = "Custom Discord RPC";
-    public static final String VERSION = "2.21";
+    public static final String VERSION = "2.21-[1.8,1.8.9]";
     public static final String UPDATE_JSON = "https://raw.githubusercontent.com/jaideepheer/MinecraftForge-custom_discordRPC/master/src/main/resources/update.json";
 
     public static Logger LOGGER = LogManager.getLogger(MOD_ID);
@@ -138,7 +138,7 @@ public class CDRPCmod {
     @SubscribeEvent
     public void guiScreenDetect(GuiScreenEvent.InitGuiEvent.Pre e)
     {
-        String screenClass = e.getGui().getClass().getName();
+        String screenClass = e.gui.getClass().getName();
         ModConfigManager.ModConfig config = ModConfigManager.getModConfig();
 
         // Check if we need to use custom class name to detect main menu screen
@@ -161,7 +161,7 @@ public class CDRPCmod {
             }
         }
         // else use vanilla detection
-        else if(e.getGui() instanceof GuiMainMenu)
+        else if(e.gui instanceof GuiMainMenu)
         {
             ModConfigManager.setLatestEvent(ModConfigManager.Event.MAIN_MENU_REACHED);
         }
@@ -170,7 +170,7 @@ public class CDRPCmod {
     @SubscribeEvent
     public void connectedToServer(FMLNetworkEvent.ClientConnectedToServerEvent e)
     {
-        if(!e.isLocal())
+        if(!e.isLocal)
         {
             connectedToMultiplayer = true;
             ModConfigManager.setLatestEvent(ModConfigManager.Event.CONNECTED_TO_MULTIPLAYER_SERVER);
